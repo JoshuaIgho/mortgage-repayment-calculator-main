@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- displays site properly based on user's device -->
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./assets/images/favicon-32x32.png"
+    />
+
+    <title>Frontend Mentor | Mortgage repayment calculator</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="white">
+        <div class="right">
+          <div class="form-container">
+            <form action="#" method="post">
+              <div class="intro">
+                <div class="mortgage">Mortgage calculator</div>
+                <a href="/">
+                  <div class="clear">Clear All</div>
+                </a>
+              </div>
+              <div class="field1">
+                <label for="amount" class="ma">Mortgage Amount</label>
+                <div class="currency-input">
+                  <div class="prefix">£</div>
+                  <input id="amount" type="number" required />
+                </div>
+              </div>
+              <div class="field">
+                <div class="label">
+                  <label for="term" class="ma">Mortgage Term</label>
+                  <label for="term" class="ma">Interest Rate</label>
+                </div>
+                <div class="center">
+                  <div class="currency">
+                    <input type="number" class="term" id="term" required min="1" />
+                    <div class="prefix1">years</div>
+                  </div>
+                  <div class="currency">
+                      <input
+                        type="number"
+                        class="rate"
+                        id="rate"
+                        required
+                        step="0.01"
+                        value="5.25"
+                      />
+                      <div class="prefix1">%</div>
+                    </div>
+                </div>
+              </div>
+              <div class="repayments">
+                <label class="repay" for="repayment">
+                  <input
+                    type="radio"
+                    name="mortgageType"
+                    id="repayment"
+                    value="repayment"
+                    checked
+                  />
+                  Repayment
+                </label>
+                <label class="interest" for="interest-only">
+                  <input
+                    type="radio"
+                    name="mortgageType"
+                    id="interest-only"
+                    value="interest-only"
+                  />
+                  Interest Only
+                </label>
+              </div>
+
+              <button style="cursor: pointer; color: black;">
+                <img src="/assets/images/icon-calculator.svg" alt="" />Calculate
+                Repayments
+              </button>
+            </form>
+          </div>
+        </div>
+        <!-- left card -->
+        <div class="left">
+          <!-- Empty state -->
+          <div class="empty-state">
+            <img
+              src="./assets/images/illustration-empty.svg"
+              alt="No data"
+              width="100%"
+            />
+            <p style="color: white; text-align: center">
+              Fill out the form and calculate to see results
+            </p>
+          </div>
+
+          <!-- Results state -->
+          <div class="results-state" style="display: none">
+            <div class="left-p">
+              <h3 class="h3">Your results</h3>
+              <p class="mb">
+                Your results are shown below based on the information you
+                provided. To adjust the results, edit the form and click
+                "Calculate repayments" again.
+              </p>
+            </div>
+            <div class="yellow">
+              <div class="dark-green">
+                <p class="Monthly">Your Monthly repayments</p>
+                <span style="color: var(--Lime)" class="mr">£1,797.74</span>
+
+                <hr />
+                <p>Total you'll repay over the term</p>
+                <span class="tr">£539,322.94</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="attribution">
+      Challenge by
+      <a href="https://www.frontendmentor.io?ref=challenge">Frontend Mentor</a>.
+      Coded by <a href="#">Your Name Here</a>.
+    </div>
+    <script>
+(function(){
+  const form = document.querySelector("form");
+  if (!form) return;
+
+  // helper: parse amount string like "£300,000" or "300,000" -> 300000
+  function parseAmountRaw(str) {
+    if (!str && str !== 0) return NaN;
+    // remove any character that's not digit, dot, minus
+    const cleaned = String(str).replace(/[^\d.-]+/g, "");
+    return parseFloat(cleaned);
+  }
+
+  // nice formatter with commas and 2 decimals
+  function fmtMoney(num) {
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // reset / clear helper (optional)
+  const clearBtn = document.querySelector(".clear");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", function (e) {
+      // if it's an anchor, let it navigate; if not, reset the form and states
+      const isAnchor = e.target.tagName.toLowerCase() === "a" || e.currentTarget.closest("a");
+      if (!isAnchor) {
+        e.preventDefault();
+        form.reset();
+        document.querySelector(".empty-state") && (document.querySelector(".empty-state").style.display = "block");
+        document.querySelector(".results-state") && (document.querySelector(".results-state").style.display = "none");
+      }
+    });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    // read raw inputs
+    const rawAmount = document.getElementById("amount") ? document.getElementById("amount").value.trim() : "";
+    // Prefer unique #term and #rate; if #rate missing, fallback to .term NodeList (first = term, second = rate)
+    const termEl = document.getElementById("term");
+    const rateEl = document.getElementById("rate");
+    let termVal, annualRateVal;
+
+    if (termEl && rateEl) {
+      termVal = parseFloat(termEl.value);
+      annualRateVal = parseFloat(rateEl.value);
+    } else {
+      // fallback for old markup using two .term inputs
+      const termNodes = document.querySelectorAll(".term");
+      termVal = termNodes[0] ? parseFloat(termNodes[0].value) : NaN;
+      annualRateVal = termNodes[1] ? parseFloat(termNodes[1].value) : NaN;
+    }
+
+    const principal = parseAmountRaw(rawAmount);
+
+    // basic validation
+    if (isNaN(principal) || isNaN(termVal) || isNaN(annualRateVal) || principal <= 0 || termVal <= 0) {
+      alert("Please enter valid numeric values for amount, term (years) and interest rate.");
+      return;
+    }
+
+    const mortgageTypeInput = document.querySelector("input[name='mortgageType']:checked");
+    const mortgageType = mortgageTypeInput ? mortgageTypeInput.value : "repayment";
+
+    const years = Number(termVal);
+    const annualRate = Number(annualRateVal) / 100;
+    const totalMonths = years * 12;
+
+    let monthlyPayment = 0;
+    let totalPayment = 0;
+
+    if (mortgageType === "repayment") {
+      const monthlyRate = annualRate / 12;
+      if (monthlyRate === 0) {
+        monthlyPayment = principal / totalMonths;
+      } else {
+        const r = monthlyRate;
+        const n = totalMonths;
+        monthlyPayment = principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      }
+      totalPayment = monthlyPayment * totalMonths;
+    } else {
+      // Interest-only:
+      // monthly interest payment:
+      monthlyPayment = principal * (annualRate / 12);
+      // total over term: interest paid + principal still owed at end
+      // Most people expect to see interest paid over term + principal, so include principal:
+      totalPayment = (monthlyPayment * totalMonths) + principal;
+      // If you only want interest paid shown, use: totalPayment = monthlyPayment * totalMonths;
+    }
+
+    // Update UI (toggle states)
+    const emptyState = document.querySelector(".empty-state");
+    const resultsState = document.querySelector(".results-state");
+    if (emptyState) emptyState.style.display = "none";
+    if (resultsState) resultsState.style.display = "block";
+
+    // Write formatted values
+    const monthlyEl = document.querySelector(".mr");
+    const totalEl = document.querySelector(".tr");
+    if (monthlyEl) monthlyEl.textContent = `£${fmtMoney(monthlyPayment)}`;
+    if (totalEl) totalEl.textContent = `£${fmtMoney(totalPayment)}`;
+  });
+})();
+</script>
+
+  </body>
+</html>
